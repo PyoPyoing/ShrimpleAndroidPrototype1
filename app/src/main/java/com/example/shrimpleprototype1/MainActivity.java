@@ -13,8 +13,10 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.media.ThumbnailUtils;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -33,9 +35,10 @@ import java.nio.ByteOrder;
 
 public class MainActivity extends AppCompatActivity {
 
-    TextView result, confidence;
+    Button camera,gallery;
     ImageView imageView;
-    Button picture;
+    TextView result;
+
     int imageSize = 640;
 
     @Override
@@ -43,12 +46,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        result = findViewById(R.id.result);
-        confidence = findViewById(R.id.confidence);
-        imageView = findViewById(R.id.imageView);
-        picture = findViewById(R.id.button);
+        camera = findViewById(R.id.button);
+        gallery = findViewById(R.id.button2);
 
-        picture.setOnClickListener(new View.OnClickListener() {
+        result = findViewById(R.id.result);
+        imageView = findViewById(R.id.imageView);
+
+        camera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 // Launch camera if we have permission
@@ -57,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
                     startActivityForResult(cameraIntent, 1);
                 } else {
                     //Request camera permission if we don't have it.
-                    requestPermissions(new String[]{Manifest.permission.CAMERA}, 100);
+                    requestPermissions(new String[]{Manifest.permission.CAMERA} , 100);
                 }
             }
         });
@@ -65,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void classifyImage(Bitmap image) {
         try {
-            Modelquant model = Modelquant.newInstance(context);
+            Modelquant model = Modelquant.newInstance(getApplicationContext());
 
             // Creates inputs for reference.
             TensorBuffer inputFeature0 = TensorBuffer.createFixedSize(new int[]{1, 640, 640, 3}, DataType.FLOAT32);
@@ -82,6 +86,8 @@ public class MainActivity extends AppCompatActivity {
                     byteBuffer.putFloat(((val >> 8) & 0xFF) * (1.f / 255.f));
                     byteBuffer.putFloat((val & 0xFF) * (1.f / 255.f));
                     // Runs model inference and gets result.
+                }
+            }
                     inputFeature0.loadBuffer(byteBuffer);
 
                     // Runs model inference and gets result.
@@ -103,19 +109,21 @@ public class MainActivity extends AppCompatActivity {
 
                     String s = "";
                     for (int y = 0; y < classes.length; y++) {
-                        s += String.format("%s: %.1f%%\n", classes[y], confidences[i] * 100);
+                        s += String.format("%s: %.1f%%\n", classes[y], confidences[x] * 100);
                     }
                     confidence.setText(s);
                     // better naming convention of x, y, i and j variables
                     // Releases model resources if no longer used.
                     model.close();
-                }
-            }
-        } catch (Exception e) {
+        }
+        catch (Exception e){
             // TODO Handle the exception
             // Better handling
         }
     }
+
+
+
     @Override
     public void onActivityResult ( int requestCode, int resultCode, @Nullable Intent data){
         if (requestCode == 1 && resultCode == RESULT_OK) {

@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
             TensorBuffer inputFeature0 = TensorBuffer.createFixedSize(new int[]{1, 640, 640, 3}, DataType.FLOAT32);
             ByteBuffer byteBuffer = ByteBuffer.allocateDirect(4 * imageSize * imageSize * 3);
             byteBuffer.order(ByteOrder.nativeOrder());
-            inputFeature0.loadBuffer(byteBuffer);
+
             int[] intValues = new int[imageSize * imageSize];
             image.getPixels(intValues, 0, image.getWidth(), 0, 0, image.getWidth(), image.getHeight());
             int pixel = 0;
@@ -95,26 +95,20 @@ public class MainActivity extends AppCompatActivity {
                     TensorBuffer outputFeature0 = outputs.getOutputFeature0AsTensorBuffer();
 
                     float[] confidences = outputFeature0.getFloatArray();
+
                     int maxPos = 0;
                     float maxConfidence = 0;
-                    for (int x = 0; x < confidences.length; x++) {
-                        if (confidences[x] > maxConfidence) {
-                            maxConfidence = confidences[x];
-                            maxPos = x;
+                    for (int i = 0; i < confidences.length; i++) {
+                        if (confidences[i] > maxConfidence) {
+                            maxConfidence = confidences[i];
+                            maxPos = i;
                         }
                     }
                     String[] classes = {"Black Gill", "Normal", "Vibriosis", "WSSV"};
-
                     result.setText(classes[maxPos]);
 
-                    String s = "";
-                    for (int y = 0; y < classes.length; y++) {
-                        s += String.format("%s: %.1f%%\n", classes[y], confidences[x] * 100);
-                    }
-                    confidence.setText(s);
-                    // better naming convention of x, y, i and j variables
-                    // Releases model resources if no longer used.
                     model.close();
+
         }
         catch (Exception e){
             // TODO Handle the exception
@@ -122,23 +116,31 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-
     @Override
-    public void onActivityResult ( int requestCode, int resultCode, @Nullable Intent data){
-        if (requestCode == 1 && resultCode == RESULT_OK) {
-            Bitmap image = (Bitmap) data.getExtras().get("data");
-            int dimension = Math.min(image.getWidth(), image.getHeight());
-            image = ThumbnailUtils.extractThumbnail(image, dimension, dimension);
-            imageView.setImageBitmap(image);
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        if(resultCode == RESULT_OK){
+            if(requestCode == 3){
+                Bitmap image = (Bitmap) data.getExtras().get("data");
+                int dimension = Math.min(image.getWidth(), image.getHeight());
+                image = ThumbnailUtils.extractThumbnail(image, dimension, dimension);
+                imageView.setImageBitmap(image);
 
-            image = Bitmap.createScaledBitmap(image, imageSize, imageSize, false);
-            classifyImage(image);
+                image = Bitmap.createScaledBitmap(image, imageSize, imageSize, false);
+                classifyImage(image);
+            }else{
+                Uri dat = data.getData();
+                Bitmap image = null;
+                try {
+                    image = MediaStore.Images.Media.getBitmap(this.getContentResolver(), dat);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                imageView.setImageBitmap(image);
+
+                image = Bitmap.createScaledBitmap(image, imageSize, imageSize, false);
+                classifyImage(image);
+            }
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
 }
-
-
-
-

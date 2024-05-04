@@ -64,7 +64,9 @@ public class MainActivity extends AppCompatActivity {
                     requestPermissions(new String[]{Manifest.permission.CAMERA} , 100);
                 }
             }
+            gallery.
         });
+
     }
 
     public void classifyImage(Bitmap image) {
